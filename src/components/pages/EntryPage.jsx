@@ -69,7 +69,7 @@ const EntryPage = () => {
           openDialog={openDialog}
           dialogClose={() => setOpenDialog(false)}
           confirmToAdd={confirmToAddUrl}
-          message="The URL you entered is already in use. Would you like to make changes?"
+          message="Oops! The URL you entered already exists. Would you like to create a new short URL?"
         />
       )}
     </div>
