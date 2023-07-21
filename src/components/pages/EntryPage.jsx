@@ -1,24 +1,29 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { addShortenedUrl } from "../../reducers/urlReducer";
 import AppHeader from "../AppHeader";
 import CopyPaste from "../CopyPaste";
 import InputField from "../InputField";
+import AlertDialog from "../AlertDialog";
 
 const EntryPage = () => {
-  const [originalUrl, setOriginalUrl] = useState("");
-  const [shortedUrl, setShortedUrl] = useState("");
+  const { urls } = useSelector((state) => state.urls);
+  const [longUrl, setLongUrl] = useState("");
+  const [shortUrl, setShortUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [flag] = useState(true);
+  const [openDialog, setOpenDialog] = useState(false);
   const dispatch = useDispatch();
-  //   const shortUrls = useSelector((state) => state.urls);
 
-  const originalUrlHandler = (url) => {
-    setOriginalUrl(url);
+  const loadingHandler = (loading) => {
+    setLoading(loading);
   };
-  const shortUrlHandler = (url) => {
-    setShortedUrl(url);
+
+  const urlHandler = (long, short) => {
+    setLongUrl(long);
+    setShortUrl(short);
   };
+
   const generateRandomId = (url) => {
     var lastFourChars = url.substring(url.length - 4);
     var randomNumber = Math.floor(Math.random() * 10000); // Generate a random number between 0 and 9999
@@ -26,36 +31,47 @@ const EntryPage = () => {
     return id;
   };
 
+  const addToLocalStorage = async (id, longUrl, shortUrl) => {
+    try {
+      setLoading(true);
+      dispatch(addShortenedUrl({ id, longUrl, shortUrl, flag }));
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+    }
+  };
+
+  const confirmToAddUrl = () => {
+    const id = generateRandomId(shortUrl);
+    if (longUrl && shortUrl) {
+      addToLocalStorage(id, longUrl, shortUrl);
+      // urlObjectHandler(null);
+    }
+    setOpenDialog(false);
+  };
+
   useEffect(() => {
-    const shortedUrlHandler = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.post(
-          `https://api.shrtco.de/v2/shorten?url=${originalUrl}`
-        );
-        const shortUrl = res.data.result.full_short_link;
-        setShortedUrl(shortUrl);
-        const id = generateRandomId(shortUrl);
-        console.log(`short`, id, " ", shortUrl);
-        dispatch(addShortenedUrl({ id, originalUrl, shortUrl }));
-      } catch (error) {
-        setLoading(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-    shortedUrlHandler();
-  }, [originalUrl]);
+    const specificUrl = urls.findIndex((url) => url.longUrl === longUrl);
+    if (specificUrl !== -1) {
+      setOpenDialog(true);
+    } else {
+      confirmToAddUrl();
+    }
+  }, [longUrl, shortUrl]);
 
   return (
     <div className="entry-container">
       <AppHeader />
-      <InputField urlHandler={originalUrlHandler} />
-      <CopyPaste
-        shortedUrl={shortedUrl}
-        loading={loading}
-        shortUrlHandler={shortUrlHandler}
-      />
+      <InputField urlHandler={urlHandler} loadingHandler={loadingHandler} />
+      <CopyPaste shortedUrl={shortUrl} loading={loading} />
+      {openDialog && (
+        <AlertDialog
+          openDialog={openDialog}
+          dialogClose={() => setOpenDialog(false)}
+          confirmToAdd={confirmToAddUrl}
+          message="The URL you entered is already in use. Would you like to make changes?"
+        />
+      )}
     </div>
   );
 };

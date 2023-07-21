@@ -7,16 +7,16 @@ import {
   TableBody,
   TableCell,
   TableContainer,
-  TableFooter,
   TableHead,
   TableRow,
 } from "@material-ui/core";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { AiFillDelete, AiFillEdit } from "react-icons/ai";
+import { deleteShortenedUrl } from "../../reducers/urlReducer";
 
 const styles = (theme) => ({
   container: {
-    maxHeight: 280,
+    maxHeight: 340,
     borderRadius: "0 0 20px 20px",
     overflowY: "auto",
     "&::-webkit-scrollbar": {
@@ -32,6 +32,11 @@ const styles = (theme) => ({
       background: theme.palette.grey[500],
       borderRadius: "4px",
     },
+    [theme.breakpoints.down("sm")]: {
+      maxHeight: "70%",
+      borderRadius: "0",
+      backgroundColor: "rgb(250, 250, 250, 0.8)",
+    },
   },
   table: {
     minWidth: 400,
@@ -41,12 +46,14 @@ const styles = (theme) => ({
       overflow: "hidden",
       textOverflow: "ellipsis",
     },
+    [theme.breakpoints.down("sm")]: {
+      minWidth: 350,
+    },
   },
   stickyHeader: {
     position: "sticky",
     top: 0,
     backgroundColor: theme.palette.background.secondary,
-    // backgroundColor: "gray",
     zIndex: 1,
   },
   cell: {
@@ -64,14 +71,27 @@ const styles = (theme) => ({
     paddingBottom: 10,
     paddingTop: 10,
   },
+  title: {
+    color: "black",
+    fontWeight: "bold",
+  },
 });
 
-function UrlListPage(props) {
-  const { classes } = props;
+function UrlListPage({ classes, urlObjectHandler }) {
   const { urls } = useSelector((state) => state.urls);
+  const dispatch = useDispatch();
 
   const handleShortUrlClick = (shortUrl) => {
     window.open(shortUrl, "_blank"); // Open the short URL in a new tab
+  };
+
+  const editUrl = (url) => {
+    // Call the function received from props
+    urlObjectHandler(url);
+  };
+
+  const deleteUrl = (urlId) => {
+    dispatch(deleteShortenedUrl(urlId));
   };
 
   return (
@@ -79,13 +99,22 @@ function UrlListPage(props) {
       <Table className={classes.table} stickyHeader>
         <TableHead>
           <TableRow className={classes.stickyHeader}>
-            <TableCell align="center" className={classes.cell}>
-              Original URL
+            <TableCell
+              align="center"
+              className={classes.cell + " " + classes.title}
+            >
+              Long URL
             </TableCell>
-            <TableCell align="center" className={classes.cell}>
+            <TableCell
+              align="center"
+              className={classes.cell + " " + classes.title}
+            >
               Short URL
             </TableCell>
-            <TableCell align="center" className={classes.cell}>
+            <TableCell
+              align="center"
+              className={classes.cell + " " + classes.title}
+            >
               Actions
             </TableCell>
           </TableRow>
@@ -93,7 +122,7 @@ function UrlListPage(props) {
         <TableBody>
           {urls.map((url) => (
             <TableRow key={url.id}>
-              <TableCell className={classes.cell}>{url.originalUrl}</TableCell>
+              <TableCell className={classes.cell}>{url.longUrl}</TableCell>
               <TableCell
                 className={classes.cell}
                 style={{ cursor: "pointer", color: "blue" }}
@@ -104,21 +133,18 @@ function UrlListPage(props) {
               <TableCell align="center" className={classes.actionCell}>
                 <AiFillEdit
                   className={classes.icon}
-                  style={{ color: "green" }}
+                  style={{ color: "#7FB992" }}
+                  onClick={() => editUrl(url)}
                 />
                 <AiFillDelete
                   className={classes.icon}
-                  style={{ color: "red" }}
+                  style={{ color: "#B6303D" }}
+                  onClick={() => deleteUrl(url.id)}
                 />
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
-        {/* <TableFooter className={classes.footer}>
-          <TableRow>
-            <TableCell colSpan={3}></TableCell>
-          </TableRow>
-        </TableFooter> */}
       </Table>
     </TableContainer>
   );
@@ -126,6 +152,7 @@ function UrlListPage(props) {
 
 UrlListPage.propTypes = {
   classes: PropTypes.object.isRequired,
+  urlObjectHandler: PropTypes.func.isRequired,
 };
 
 export default withStyles(styles)(UrlListPage);
